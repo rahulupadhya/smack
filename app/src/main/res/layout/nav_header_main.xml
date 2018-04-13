@@ -30,7 +30,6 @@
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
-        android:text="Rahul"
         android:textAppearance="@style/TextAppearance.AppCompat.Body1"
         app:layout_constraintStart_toEndOf="@+id/userimageNavHeader"
         app:layout_constraintTop_toTopOf="@+id/userimageNavHeader" />
@@ -41,7 +40,6 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="8dp"
         android:layout_marginStart="8dp"
-        android:text="rahul@gmail.com"
         app:layout_constraintStart_toEndOf="@+id/userimageNavHeader"
         app:layout_constraintTop_toBottomOf="@+id/nameNavHeader" />
 
