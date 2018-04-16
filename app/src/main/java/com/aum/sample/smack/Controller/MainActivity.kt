@@ -16,6 +16,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.EditText
 import com.aum.sample.smack.Model.Channel
+import com.aum.sample.smack.Model.Message
 import com.aum.sample.smack.R
 import com.aum.sample.smack.Services.AuthService
 import com.aum.sample.smack.Services.MessageService
@@ -44,8 +45,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+
         socket.connect()
         socket.on("channelCreated", onNewChannel)
+        socket.on("messageCreated", onNewMessage)
+
         val toggle = ActionBarDrawerToggle(
                 this, drawer_layout, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close)
         drawer_layout.addDrawerListener(toggle)
@@ -61,6 +65,7 @@ class MainActivity : AppCompatActivity() {
         if (App.prefs.isLoggedIn) {
             AuthService.findUserByEmail(this) {}
         }
+
 
     }
 
@@ -101,6 +106,15 @@ class MainActivity : AppCompatActivity() {
     fun updateWithChannel() {
         mainChannelName.text = "#${selectedChannel?.name}"
         //download messages for channel
+        if (selectedChannel != null) {
+            MessageService.getMessages(selectedChannel!!.id) { complete ->
+                if(complete){
+                    for(message in MessageService.messages){
+                        println(message.message)
+                    }
+                }
+            }
+        }
     }
 
     override fun onBackPressed() {
@@ -148,19 +162,47 @@ class MainActivity : AppCompatActivity() {
     }
 
     private val onNewChannel = Emitter.Listener { args ->
-        runOnUiThread {
-            val channelName = args[0] as String
-            val channelDesc = args[1] as String
-            val channelId = args[2] as String
+        if (App.prefs.isLoggedIn) {
+            runOnUiThread {
+                val channelName = args[0] as String
+                val channelDesc = args[1] as String
+                val channelId = args[2] as String
 
-            val newChannel = Channel(channelName, channelDesc, channelId)
-            MessageService.channels.add(newChannel)
-            channelAdapter.notifyDataSetChanged()
+                val newChannel = Channel(channelName, channelDesc, channelId)
+                MessageService.channels.add(newChannel)
+                channelAdapter.notifyDataSetChanged()
+            }
+        }
+    }
+
+    private val onNewMessage = Emitter.Listener { args ->
+        if (App.prefs.isLoggedIn) {
+            runOnUiThread {
+                val channelId = args[2] as String
+                if (channelId == selectedChannel?.id) {
+                    val message = args[0] as String
+                    val userName = args[3] as String
+                    val userAvatar = args[4] as String
+                    val userAvatarColor = args[5] as String
+                    val id = args[6] as String
+                    val timeStamp = args[7] as String
+
+                    val newMessage = Message(message, userName, channelId, userAvatar, userAvatarColor, id, timeStamp)
+                    MessageService.messages.add(newMessage)
+                    println(newMessage.message)
+                }
+            }
         }
     }
 
     fun sendMsgBtnClicked(view: View) {
-        hideKeyboard()
+        if (App.prefs.isLoggedIn && messageTextField.text.isNotEmpty() && selectedChannel != null) {
+            val userId = UserDataService.id
+            val channelId = selectedChannel!!.id
+            socket.emit("newMessage", messageTextField.text.toString(), userId, channelId, UserDataService.name, UserDataService.avatarName, UserDataService.avatarColor)
+            messageTextField.text.clear()
+            hideKeyboard()
+        }
     }
 
     fun hideKeyboard() {
