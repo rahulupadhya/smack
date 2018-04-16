@@ -16,6 +16,7 @@ import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.ArrayAdapter
 import android.widget.EditText
+import android.widget.Toast
 import com.aum.sample.smack.Adapters.MessageAdapter
 import com.aum.sample.smack.Model.Channel
 import com.aum.sample.smack.Model.Message
@@ -63,6 +64,7 @@ class MainActivity : AppCompatActivity() {
         drawer_layout.addDrawerListener(toggle)
         toggle.syncState()
         setupAdapter()
+        LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeRecevier, IntentFilter(BROADCAST_USER_DATA_CHANGE))
 
         channel_list.setOnItemClickListener { _, _, position, id ->
             selectedChannel = MessageService.channels[position]
@@ -75,11 +77,6 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-    }
-
-    override fun onResume() {
-        LocalBroadcastManager.getInstance(this).registerReceiver(userDataChangeRecevier, IntentFilter(BROADCAST_USER_DATA_CHANGE))
-        super.onResume()
     }
 
     override fun onDestroy() {
@@ -142,7 +139,7 @@ class MainActivity : AppCompatActivity() {
             nameNavHeader.text = ""
             emailNavHeader.text = ""
             loginBtnNavHeader.text = "Login"
-            mainChannelName.text="Please Log In"
+            mainChannelName.text = "Please Log In"
             userimageNavHeader.setImageResource(R.drawable.profiledefault)
             userimageNavHeader.setBackgroundColor(Color.TRANSPARENT)
         } else {
@@ -160,11 +157,15 @@ class MainActivity : AppCompatActivity() {
                         //perform some logic when clicked
                         val nameTextField = dialogView.findViewById<EditText>(R.id.addChannelNameTxt)
                         val descTextField = dialogView.findViewById<EditText>(R.id.addChannelDescTxt)
-                        val channelName = nameTextField.text.toString()
-                        val channelDesc = descTextField.text.toString()
+                        if (nameTextField.text.isNotEmpty()) {
+                            val channelName = nameTextField.text.toString()
+                            val channelDesc = descTextField.text.toString()
 
-                        //Create channel with the channel name and description
-                        socket.emit("newChannel", channelName, channelDesc)
+                            //Create channel with the channel name and description
+                            socket.emit("newChannel", channelName, channelDesc)
+                        } else {
+                            Toast.makeText(this, "Please fill the channel name", Toast.LENGTH_SHORT).show()
+                        }
                     }
                     .setNegativeButton("Cancel") { _, _ ->
                         //Cancel and close the dialog
